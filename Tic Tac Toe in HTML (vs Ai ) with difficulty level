@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tic Tac Toe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%, #a1c4fd 100%, #c2e9fb 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            /* Remove margin-top so gradient fills whole page */
+        }
+        h1 {
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ff758c 0%, #ff7eb3 50%, #65e5ed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-fill-color: transparent;
+        }
+        #controls {
+            margin-bottom: 12px;
+            background: #fff3cd;
+            padding: 8px 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(255, 183, 94, 0.09);
+        }
+        #board {
+            display: grid;
+            grid-template-columns: repeat(3, 70px);
+            grid-template-rows: repeat(3, 70px);
+            gap: 8px;
+            margin-bottom: 20px;
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            padding: 16px;
+        }
+        .cell {
+            background: linear-gradient(135deg, #f9d423 0%, #ff4e50 100%);
+            border: 2px solid #222;
+            width: 70px;
+            height: 70px;
+            font-size: 2.5em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #222;
+            border-radius: 10px;
+            transition: 
+                background 0.2s, 
+                box-shadow 0.18s,
+                transform 0.18s;
+            box-shadow: 0 2px 6px rgba(255, 120, 120, 0.10);
+            user-select: none;
+        }
+        .cell:hover {
+            background: linear-gradient(135deg, #43cea2 0%, #185a9d 100%);
+            color: #fff;
+            transform: scale(1.07);
+            box-shadow: 0 4px 16px rgba(67, 206, 162, 0.16);
+        }
+        #status {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            background: #ffe0e9;
+            color: #d72660;
+            padding: 8px 18px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(215, 38, 96, 0.09);
+        }
+        #resetBtn {
+            padding: 9px 28px;
+            font-size: 1em;
+            border: none;
+            background: linear-gradient(90deg, #36d1c4 0%, #5b86e5 100%);
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            letter-spacing: 1px;
+            transition: background 0.19s, transform 0.16s;
+            box-shadow: 0 2px 8px rgba(91, 134, 229, 0.15);
+        }
+        #resetBtn:hover {
+            background: linear-gradient(90deg, #ee0979 0%, #ff6a00 100%);
+            transform: scale(1.04);
+        }
+        #difficulty {
+            font-size: 1em;
+            margin-left: 8px;
+            background: #e0f7fa;
+            border: 1px solid #b2ebf2;
+            border-radius: 5px;
+            padding: 2px 9px;
+            color: #00796b;
+        }
+        /* Footer styling */
+        .footer {
+            margin-top: 50px;
+            padding-bottom: 24px;
+            font-size: 1.08em;
+            color: #222;
+            letter-spacing: 0.5px;
+            text-align: center;
+            width: 100%;
+            opacity: 0.85;
+            font-weight: 500;
+            text-shadow: 0 1px 5px #fff4f4;
+        }
+        .footer .heart {
+            color: #e25555;
+            font-size: 1.18em;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tic Tac Toe</h1>
+    <div id="controls">
+        <label for="difficulty">Difficulty:</label>
+        <select id="difficulty">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+        </select>
+    </div>
+    <div id="status">Player X's turn</div>
+    <div id="board"></div>
+    <button id="resetBtn">Reset Game</button>
+
+    <div class="footer">
+        *Made by <span class="heart">♥️</span> in HTML by Yug
+    </div>
+
+    <script>
+        const board = document.getElementById('board');
+        const statusDiv = document.getElementById('status');
+        const resetBtn = document.getElementById('resetBtn');
+        const difficultySelect = document.getElementById('difficulty');
+
+        let currentPlayer = 'X'; // Player is always X, AI is O
+        let gameActive = true;
+        let boardState = Array(9).fill('');
+        let aiDifficulty = difficultySelect.value;
+
+        // Event Listeners
+        difficultySelect.addEventListener('change', () => {
+            aiDifficulty = difficultySelect.value;
+            resetGame();
+        });
+
+        resetBtn.addEventListener('click', resetGame);
+
+        function renderBoard() {
+            board.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.index = i;
+                cell.textContent = boardState[i];
+                cell.addEventListener('click', handleCellClick);
+                board.appendChild(cell);
+            }
+        }
+
+        function handleCellClick(e) {
+            const index = e.target.dataset.index;
+            if (!gameActive || boardState[index]) return;
+
+            boardState[index] = currentPlayer; // X's move
+            renderBoard();
+            if (checkWinner('X')) {
+                statusDiv.textContent = `Player X wins!`;
+                gameActive = false;
+                return;
+            } else if (boardState.every(cell => cell)) {
+                statusDiv.textContent = "It's a draw!";
+                gameActive = false;
+                return;
+            } else {
+                currentPlayer = 'O';
+                statusDiv.textContent = "AI's turn";
+                setTimeout(aiMove, 400); // Small delay for realism
+            }
+        }
+
+        function aiMove() {
+            if (!gameActive) return;
+            let move;
+            if (aiDifficulty === 'easy') {
+                move = getRandomMove();
+            } else if (aiDifficulty === 'medium') {
+                move = Math.random() < 0.5 ? getRandomMove() : getBestMove();
+            } else {
+                move = getBestMove();
+            }
+            if (move !== null) {
+                boardState[move] = 'O';
+                renderBoard();
+                if (checkWinner('O')) {
+                    statusDiv.textContent = `AI wins!`;
+                    gameActive = false;
+                } else if (boardState.every(cell => cell)) {
+                    statusDiv.textContent = "It's a draw!";
+                    gameActive = false;
+                } else {
+                    currentPlayer = 'X';
+                    statusDiv.textContent = "Player X's turn";
+                }
+            }
+        }
+
+        function getRandomMove() {
+            const available = boardState
+                .map((cell, idx) => cell === '' ? idx : null)
+                .filter(idx => idx !== null);
+            if (available.length === 0) return null;
+            return available[Math.floor(Math.random() * available.length)];
+        }
+
+        // Minimax AI
+        function getBestMove() {
+            let bestScore = -Infinity;
+            let move = null;
+            for (let i = 0; i < 9; i++) {
+                if (boardState[i] === '') {
+                    boardState[i] = 'O';
+                    let score = minimax(boardState, 0, false);
+                    boardState[i] = '';
+                    if (score > bestScore) {
+                        bestScore = score;
+                        move = i;
+                    }
+                }
+            }
+            return move;
+        }
+
+        function minimax(state, depth, isMaximizing) {
+            if (checkWinnerForState(state, 'O')) return 10 - depth;
+            if (checkWinnerForState(state, 'X')) return depth - 10;
+            if (state.every(cell => cell)) return 0;
+
+            if (isMaximizing) {
+                let best = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (state[i] === '') {
+                        state[i] = 'O';
+                        best = Math.max(best, minimax(state, depth + 1, false));
+                        state[i] = '';
+                    }
+                }
+                return best;
+            } else {
+                let best = Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (state[i] === '') {
+                        state[i] = 'X';
+                        best = Math.min(best, minimax(state, depth + 1, true));
+                        state[i] = '';
+                    }
+                }
+                return best;
+            }
+        }
+
+        function checkWinner(player) {
+            const winPatterns = [
+                [0,1,2],[3,4,5],[6,7,8],
+                [0,3,6],[1,4,7],[2,5,8],
+                [0,4,8],[2,4,6]
+            ];
+            return winPatterns.some(pattern => {
+                const [a,b,c] = pattern;
+                return boardState[a] === player && boardState[b] === player && boardState[c] === player;
+            });
+        }
+
+        function checkWinnerForState(state, player) {
+            const winPatterns = [
+                [0,1,2],[3,4,5],[6,7,8],
+                [0,3,6],[1,4,7],[2,5,8],
+                [0,4,8],[2,4,6]
+            ];
+            return winPatterns.some(pattern => {
+                const [a,b,c] = pattern;
+                return state[a] === player && state[b] === player && state[c] === player;
+            });
+        }
+
+        function resetGame() {
+            boardState = Array(9).fill('');
+            currentPlayer = 'X';
+            gameActive = true;
+            statusDiv.textContent = "Player X's turn";
+            renderBoard();
+        }
+
+        renderBoard();
+    </script>
+</body>
+</html>
